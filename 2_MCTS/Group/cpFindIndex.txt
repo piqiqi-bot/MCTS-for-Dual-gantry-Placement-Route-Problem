@@ -1,6 +1,2 @@
 cpFindIndex (first, second):
 3, 34
-cpFindIndex (first, second):
-3, 34
-cpFindIndex (first, second):
-3, 34
