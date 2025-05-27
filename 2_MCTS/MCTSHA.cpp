@@ -272,7 +272,7 @@ OptRTn Optimizer::TreeSearch_Point_Allocatin()
 
     rearRootNode.m_mountPointGroup = tempRearGroup;
     rearRootNode.m_MountPoint = m_MountPoint;
-    frontRootNode.gantry = 1;
+    rearRootNode.gantry = 1;
 
     // Initialize the child node list
     frontRootNode.m_childList.resize(frontRootNode.m_leafNodeNum);
@@ -289,6 +289,7 @@ OptRTn Optimizer::TreeSearch_Point_Allocatin()
     outFile << "==== MCTS algothmic run begin ====" << endl;
     clock_t start_time = clock();
     for (size_t cnt = 0; cnt < (numFrontSubcycle + numRearSubcycle); cnt++) {
+        printf("==== MCTS algothmic run cnt: %zu ====\n", cnt);
         if (m_bThreadExit)
             return OptRTn::eOptInterruptErr;
         // ** Switch the search gantry
