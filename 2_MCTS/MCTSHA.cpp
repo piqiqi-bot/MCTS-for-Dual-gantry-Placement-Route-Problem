@@ -144,7 +144,7 @@ void Optimizer::DPMountSequence(vector<MountPoint>& points) {
 		}
 	}
     // Remove all occurrences of 1 from min_path
-    min_path.erase(std::remove(min_path.begin(), min_path.end(), 1), min_path.end());
+    for (auto& v : min_path) v -= 1;
 	points = M_Map(points, min_path);
 }
 
@@ -179,28 +179,28 @@ double Optimizer::GetDPSequenceValue(RodOptResult* pRodOptResult, MountOptResult
 	return totalDistance;
 }
 
-TreeNode Optimizer::InitRootNode(RodOptResult* pRodOptResult, MountOptResult* pMountOptResult)
+TreeNode Optimizer::InitRootNode(RodOptResult pRodOptResult)
 {
 	MountOptResult			tmpMountOptResult;
 
-	int numSubcycle = accumulate(pRodOptResult->Subcycle.begin(), pRodOptResult->Subcycle.end(), 0);
+	int numSubcycle = accumulate(pRodOptResult.Subcycle.begin(), pRodOptResult.Subcycle.end(), 0);
 	tmpMountOptResult.MountCp = matrix<int>(numSubcycle, vector<int>(m_CommonPara.HeadNum, 0));
 	tmpMountOptResult.RodCp = tmpMountOptResult.MountCp;
 
-	int compGroupsize = pRodOptResult->ComponentGroup.size();
+	int compGroupsize = pRodOptResult.ComponentGroup.size();
 	// ** Generate the component group
 	vector<int> cycleList;
 	for (int cntCPg = 0; cntCPg < compGroupsize; cntCPg++) {
-		int idxCPg = pRodOptResult->Sequence.at(cntCPg) - 1;
+		int idxCPg = pRodOptResult.Sequence.at(cntCPg) - 1;
 		// subcycle range
 		int floorCycle, ceilCycle;
 		if (idxCPg == 0) {
 			floorCycle = 0;
-			ceilCycle = pRodOptResult->Subcycle.at(0);
+			ceilCycle = pRodOptResult.Subcycle.at(0);
 		}
 		else {
-			floorCycle = accumulate(pRodOptResult->Subcycle.begin(), pRodOptResult->Subcycle.begin() + idxCPg, 0);
-			ceilCycle = floorCycle + pRodOptResult->Subcycle.at(idxCPg);
+			floorCycle = accumulate(pRodOptResult.Subcycle.begin(), pRodOptResult.Subcycle.begin() + idxCPg, 0);
+			ceilCycle = floorCycle + pRodOptResult.Subcycle.at(idxCPg);
 		}
 		for (int cntCycle = floorCycle; cntCycle < ceilCycle; cntCycle++) {
 			cycleList.push_back(cntCycle);
@@ -208,7 +208,7 @@ TreeNode Optimizer::InitRootNode(RodOptResult* pRodOptResult, MountOptResult* pM
 	}
 	TreeNode rootNode;
 	rootNode.m_mountOptResult = tmpMountOptResult;
-	rootNode.m_RodOptResult = *pRodOptResult;
+	rootNode.m_RodOptResult = pRodOptResult;
 	rootNode.m_CpT_S1 = matrix<MountPointInS1>(m_CommonPara.HeadNum);
 	rootNode.totalCycle = numSubcycle;
 	rootNode.curCycle = -1;
@@ -216,7 +216,7 @@ TreeNode Optimizer::InitRootNode(RodOptResult* pRodOptResult, MountOptResult* pM
 	return rootNode;
 }
 
-OptRTn Optimizer::TreeSearch_Point_Allocatin(vector<shared_ptr<Optimizer>> m_opt)
+OptRTn Optimizer::TreeSearch_Point_Allocatin()
 {
     string log_message = " ---- function run " + string(__FUNCTION__) + " ---- ";
     printf("%s\n", log_message.c_str());
@@ -225,56 +225,20 @@ OptRTn Optimizer::TreeSearch_Point_Allocatin(vector<shared_ptr<Optimizer>> m_opt
     MountOptResult			tmpFrontMountOptResult;         // Front MountOptResult
     MountOptResult			tmpRearMountOptResult;          // Rear MountOptResult
     
-    vector<OptimizerGroup> frontGroup = m_opt.front()->GetOptimizerGroup();
-    vector<OptimizerGroup> rearGroup = m_opt.back()->GetOptimizerGroup();
-    vector<OptimizerGroup> tempFrontGroup; 
-    vector<OptimizerGroup> tempRearGroup;
-    tempFrontGroup = frontGroup;
-    tempRearGroup = rearGroup;
+    vector<OptimizerGroup> tempFrontGroup = frontGroup;
+    vector<OptimizerGroup> tempRearGroup = rearGroup;
 
-    vector<pair<int, int>> cpFindIndex;
-    for (int cpFCnt = 0; cpFCnt < m_opt.front()->GetComponentInfo().size(); cpFCnt++)
-    {
-        string f_PartName = m_opt.front()->GetComponentInfo().at(cpFCnt).m_strPartName;
-        for (int cpRCnt = 0; cpRCnt < m_opt.back()->GetComponentInfo().size(); cpRCnt++)
-        {
-            string r_PartName = m_opt.back()->GetComponentInfo().at(cpRCnt).m_strPartName;
-            if (f_PartName == r_PartName)
-            {
-                cpFindIndex.push_back(pair<int, int>(cpFCnt, cpRCnt));
-                // Update all mount point information
-                tempFrontGroup.at(0).CpNo.at(cpFCnt).insert(tempFrontGroup.at(0).CpNo.at(cpFCnt).end(), rearGroup.at(0).CpNo.at(cpRCnt).begin(), rearGroup.at(0).CpNo.at(cpRCnt).end());
-                tempFrontGroup.at(0).CpTH.at(cpFCnt).insert(tempFrontGroup.at(0).CpTH.at(cpFCnt).end(), rearGroup.at(0).CpTH.at(cpRCnt).begin(), rearGroup.at(0).CpTH.at(cpRCnt).end());
-                tempFrontGroup.at(0).CpTX.at(cpFCnt).insert(tempFrontGroup.at(0).CpTX.at(cpFCnt).end(), rearGroup.at(0).CpTX.at(cpRCnt).begin(), rearGroup.at(0).CpTX.at(cpRCnt).end());
-                tempFrontGroup.at(0).CpTY.at(cpFCnt).insert(tempFrontGroup.at(0).CpTY.at(cpFCnt).end(), rearGroup.at(0).CpTY.at(cpRCnt).begin(), rearGroup.at(0).CpTY.at(cpRCnt).end());
-                tempFrontGroup.at(0).CpNum.at(cpFCnt) += rearGroup.at(0).CpNum.at(cpRCnt);
-                
-                tempRearGroup.at(0).CpNo.at(cpRCnt).insert(tempRearGroup.at(0).CpNo.at(cpRCnt).end(), frontGroup.at(0).CpNo.at(cpFCnt).begin(), frontGroup.at(0).CpNo.at(cpFCnt).end());
-                tempRearGroup.at(0).CpTH.at(cpRCnt).insert(tempRearGroup.at(0).CpTH.at(cpRCnt).end(), frontGroup.at(0).CpTH.at(cpFCnt).begin(), frontGroup.at(0).CpTH.at(cpFCnt).end());
-                tempRearGroup.at(0).CpTX.at(cpRCnt).insert(tempRearGroup.at(0).CpTX.at(cpRCnt).end(), frontGroup.at(0).CpTX.at(cpFCnt).begin(), frontGroup.at(0).CpTX.at(cpFCnt).end());
-                tempRearGroup.at(0).CpTY.at(cpRCnt).insert(tempRearGroup.at(0).CpTY.at(cpRCnt).end(), frontGroup.at(0).CpTY.at(cpFCnt).begin(), frontGroup.at(0).CpTY.at(cpFCnt).end());
-                tempRearGroup.at(0).CpNum.at(cpRCnt) += frontGroup.at(0).CpNum.at(cpFCnt);
-            }
-        }
-    }
-    
-
-    RodOptResult* m_Front_pRodOptResult = &m_opt.front()->GetRodOptResult();
-    RodOptResult* m_Rear_pRodOptResult = &m_opt.back()->GetRodOptResult();
-    MountOptResult* m_Front_pMountOptResult = &m_opt.front()->GetMountOptResult();
-    MountOptResult* m_Rear_pMountOptResult = &m_opt.back()->GetMountOptResult();
-    int numFrontSubcycle = accumulate(m_Front_pRodOptResult->Subcycle.begin(), m_Front_pRodOptResult->Subcycle.end(), 0);
-    int numRearSubcycle = accumulate(m_Rear_pRodOptResult->Subcycle.begin(), m_Rear_pRodOptResult->Subcycle.end(), 0);
+    int numFrontSubcycle = accumulate(m_Front_pRodOptResult.Subcycle.begin(), m_Front_pRodOptResult.Subcycle.end(), 0);
+    int numRearSubcycle = accumulate(m_Rear_pRodOptResult.Subcycle.begin(), m_Rear_pRodOptResult.Subcycle.end(), 0);
 
     // Use std::make_shared to avoid slicing and ensure proper construction
-    std::shared_ptr<TreeNode> frontRootNodePtr = std::make_shared<TreeNode>(InitRootNode(m_Front_pRodOptResult, m_Front_pMountOptResult));
-    std::shared_ptr<TreeNode> rearRootNodePtr = std::make_shared<TreeNode>(InitRootNode(m_Rear_pRodOptResult, m_Rear_pMountOptResult));
+    std::shared_ptr<TreeNode> frontRootNodePtr = std::make_shared<TreeNode>(InitRootNode(m_Front_pRodOptResult));
+    std::shared_ptr<TreeNode> rearRootNodePtr = std::make_shared<TreeNode>(InitRootNode(m_Rear_pRodOptResult));
     TreeNode& frontRootNode = *frontRootNodePtr;
     TreeNode& rearRootNode = *rearRootNodePtr;
 
-    // ** Set the optimizer pointer
-    frontRootNode.ptr_Optimizer = m_opt.front().get();
-    rearRootNode.ptr_Optimizer = m_opt.back().get();
+    frontRootNode.ptr_Optimizer = this;
+    rearRootNode.ptr_Optimizer = this;
     
     double dMaxPosX = max_element(m_MountPoint.begin(), m_MountPoint.end(), [=](OptMountPointInfo& elem1, OptMountPointInfo& elem2)
         {return elem1.GetPosition().x < elem2.GetPosition().x; })->GetPosition().x;
@@ -303,11 +267,11 @@ OptRTn Optimizer::TreeSearch_Point_Allocatin(vector<shared_ptr<Optimizer>> m_opt
     rearRootNode.m_VirtualRate = VirtualRate;
 
     frontRootNode.m_mountPointGroup = tempFrontGroup;
-    frontRootNode.m_MountPoint = m_opt.front()->GetMountPoint();
+    frontRootNode.m_MountPoint = m_MountPoint;
     frontRootNode.gantry = 0;
 
     rearRootNode.m_mountPointGroup = tempRearGroup;
-    rearRootNode.m_MountPoint = m_opt.back()->GetMountPoint();
+    rearRootNode.m_MountPoint = m_MountPoint;
     frontRootNode.gantry = 1;
 
     // Initialize the child node list
@@ -414,12 +378,8 @@ OptRTn Optimizer::TreeSearch_Point_Allocatin(vector<shared_ptr<Optimizer>> m_opt
 
     // Update the result
     double totalD_OnPCB = 0;
-    totalD_OnPCB += m_opt.front()->Calculate_Placement_Distance(&tmpFrontMountOptResult);
-    totalD_OnPCB += m_opt.back()->Calculate_Placement_Distance(&tmpRearMountOptResult);
-    m_Front_pMountOptResult->MountCp = tmpFrontMountOptResult.MountCp;
-    m_Rear_pMountOptResult->MountCp = tmpRearMountOptResult.MountCp;
-    m_Front_pMountOptResult->RodCp = tmpFrontMountOptResult.RodCp;
-    m_Rear_pMountOptResult->RodCp = tmpRearMountOptResult.RodCp;
+    totalD_OnPCB += Calculate_Placement_Distance(&tmpFrontMountOptResult);
+    totalD_OnPCB += Calculate_Placement_Distance(&tmpRearMountOptResult);
     outFile << "MCTS algothmic run value: " << to_string(totalD_OnPCB) << endl;
     outFile.close();
 

@@ -52,7 +52,7 @@ private:
 public:
 	TreeNode();
 	TreeNode(shared_ptr<TreeNode> ref);
-	TreeNode(TreeNode& ref);
+	TreeNode(const TreeNode& ref);
 	void SetNodeState(NodeState in_state);
 	NodeState GetNodeState();
 	void SetParentNode(shared_ptr<TreeNode> ptr);

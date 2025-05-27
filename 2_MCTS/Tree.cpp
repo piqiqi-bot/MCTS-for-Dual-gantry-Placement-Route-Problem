@@ -84,7 +84,7 @@ TreeNode::TreeNode(shared_ptr<TreeNode> ref)
     std::iota(this->m_childList.begin(), this->m_childList.end(), 0);
 }
 
-TreeNode::TreeNode(TreeNode& ref)
+TreeNode::TreeNode(const TreeNode& ref)
 {
     this->ptr_Optimizer = ref.ptr_Optimizer;
     this->head_Interval = ref.head_Interval;
@@ -808,8 +808,8 @@ shared_ptr<TreeNode> TreeNode::treePolicy(shared_ptr<TreeNode> node)
 
 shared_ptr<TreeNode> TreeNode::MCTSFuction(shared_ptr<TreeNode> node)
 {
-    //hardware_threads = 1;
-    hardware_threads = 3;
+    hardware_threads = 1;
+    //hardware_threads = 3;
 
     std::vector<std::thread> workers;
     int searchCount = 5;

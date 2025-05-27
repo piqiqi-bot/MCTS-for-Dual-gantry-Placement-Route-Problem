@@ -34,7 +34,7 @@ vector<T> M_Map(vector<T>& vecTotal, vector<int>& vecId) {
 		res.push_back(vecTotal.at(vecId.at(i)));
 	}
 	return res;
-}
+};
 
 class Point
 {
@@ -129,7 +129,7 @@ vector<int> M_InvFind(vector<T> vec, T num = 0) {
 		}
 	}
 	return ret;
-}
+};
 
 // Index search function
 template<typename T>
@@ -141,7 +141,7 @@ vector<int> M_Find(vector<T> vec, T num = 0) {
 		}
 	}
 	return ret;
-}
+};
 
 enum class OptRTn {
 	eOptSuccess = 0,					// 优化成功
@@ -176,8 +176,9 @@ enum class LogLevel {
 class CommonPara {
 public:
 	BOOL				HeadInterval = 30;				// Rod Interval
-	BOOL				HeadNum;						//  Head Number
-    vector<BOOL>		idxHdUsed;						// Useable Head Number
+	BOOL				HeadNum = 10;						//  Head Number
+    vector<BOOL>		idxHdUsed{1,1,1,1,1,1,1,1,1,1};	// Useable Head Number
+	
 };
 
 class MountPoint {
@@ -228,14 +229,29 @@ private:
 	BOOL			m_Orbit;			// Orbit ID
     BOOL			m_bSkip;			// Skip flag
 public:
-Point	GetPosition(){
+Point GetPosition(){
     return m_pPos; 
 };
-string OptMountPointInfo::GetStrPartName() {
+void SetPosition(Point pos) {
+	m_pPos = pos;
+};
+string GetStrPartName() {
 	return m_strPartName;
 };
-BOOL OptMountPointInfo::GetSkip() {
+BOOL GetSkip() {
 	return m_bSkip;
+};
+BOOL GetNo() {
+	return m_No;
+};
+void SetNo(BOOL no) {
+	m_No = no;
+};
+void SetSkip(BOOL skip) {
+	m_bSkip = skip;
+};
+void SetStrPartName(string strPartName) {
+	m_strPartName = strPartName;
 };
 };
 
@@ -283,7 +299,8 @@ public:
 
 class  Optimizer {
 public:
-	Optimizer();
+	Optimizer(){};
+	~Optimizer(){};
     vector<OptimizerGroup> &GetOptimizerGroup();
     vector<OptComponentInfo> &GetComponentInfo();
     CommonPara &GetCommonParaInfo();
@@ -298,9 +315,9 @@ public:
     void Generate_Cycle_Mount_Sequence(RodOptResult *pRodOptResult, MountOptResult *pMountOptResult, int cntCPg, int cntCycle, bool bFastSearch);
     double GetDPSequenceValue(RodOptResult *pRodOptResult, MountOptResult *pMountOptResult, int cntCPg, int cntCycle);
 
-    TreeNode InitRootNode(RodOptResult *pRodOptResult, MountOptResult *pMountOptResult);
+    TreeNode InitRootNode(RodOptResult pRodOptResult);
 
-    OptRTn TreeSearch_Point_Allocatin(vector<shared_ptr<Optimizer>> m_opt);
+    OptRTn TreeSearch_Point_Allocatin();
 
     vector<OptimizerGroup>		m_MountPointGroup;			// Component Mount Point Group
     vector<OptComponentInfo>	m_ComponentInfo;			// Component Information
@@ -308,7 +325,15 @@ public:
     MountOptResult				m_MountAssignmentResult;	// Mount Assignment Result
     CommonPara					m_CommonPara;				// Common Parameters
     vector<OptMountPointInfo>	m_MountPoint;				// Mount Point Information
-    std::atomic<BOOL>			m_bThreadExit;				// Thread exit flag
+    BOOL			m_bThreadExit = false;				// Thread exit flag
+
+	std::vector<OptimizerGroup> frontGroup;
+    std::vector<OptimizerGroup> rearGroup;
+	RodOptResult m_Front_pRodOptResult;
+    RodOptResult m_Rear_pRodOptResult;
+	vector<pair<int, int>> cpFindIndex;
+	vector<OptMountPointInfo>	m_front_MountPoint;				// Mount Point Information
+	vector<OptMountPointInfo>	m_rear_MountPoint;				// Mount Point Information
 };
 
 
