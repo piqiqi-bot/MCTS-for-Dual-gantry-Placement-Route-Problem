@@ -170,6 +170,14 @@ void Optimizer::Generate_Cycle_Mount_Sequence(RodOptResult* pRodOptResult, Mount
 	sortPoints = Points;
 	
 	assert(sortPoints.size() == M_InvFind(pRodOptResult->ComponentGroup.at(cntCPg), 0).size());
+
+    pMountOptResult->MountCp.at(cntCycle) = vector<int>(m_CommonPara.HeadNum, 0);
+    for (size_t cntCp = 0; cntCp < sortPoints.size(); cntCp++) {
+        int idxS = sortPoints.at(cntCp).headnum;
+        int CpIndex = pMountOptResult->RodCp.at(cntCycle).at(idxS) - 1;
+
+        pMountOptResult->MountCp.at(cntCycle).at(cntCp) = CpIndex + 1;
+    }
 }
 
 double Optimizer::GetDPSequenceValue(RodOptResult* pRodOptResult, MountOptResult* pMountOptResult, int cntCPg, int cntCycle)
